@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
@@ -104,6 +105,7 @@ describe('LoafInstrumentation', () => {
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage = setupTestStorage();
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,
@@ -538,6 +540,7 @@ describe('LoafInstrumentation', () => {
     const limitManager2 = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage2 = setupTestStorage();
     const userSessionManager2 = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: limitManager2,
       perf,

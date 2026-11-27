@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  InMemorySessionPartCounters,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../tests/utils/index.ts';
@@ -51,6 +52,7 @@ describe('sessionAPI', () => {
 
     beforeEach(() => {
       manager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
         perf: new OTelPerformanceManager(),

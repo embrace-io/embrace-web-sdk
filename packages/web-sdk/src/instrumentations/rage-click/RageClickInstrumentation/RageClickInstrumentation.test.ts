@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   setupTestLogExporter,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -35,6 +36,7 @@ describe('RageClickInstrumentation', () => {
 
   before(() => {
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),

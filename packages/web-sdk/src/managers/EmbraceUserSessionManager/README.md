@@ -25,8 +25,10 @@ The manager tracks two distinct things:
 A user session contains one or more session parts, indexed within the user
 session by `emb.user_session_part_index`. Each session part also has
 `emb.session_part_number`, a monotonically increasing counter across all
-parts ever generated in this browser since the first visit. Each session
-part is bound to a user session at start time.
+parts ever generated in this browser since the first visit. Both are handed out
+from IndexedDB, so parts in different tabs don't share them (see
+[Session part counters](#session-part-counters)). Each session part is bound to
+a user session at start time.
 
 ## Public API surface
 
@@ -65,10 +67,10 @@ current equivalents; others are inert (return `null` or no-op).
 
 `UserSessionManagerInternal` extends the public interface with members used by
 instrumentations and processors inside the SDK only: driving the session-part
-lifecycle (start and end), reading the active part id and span, incrementing
-per-part counters, subscribing to part start/end, and wiring the tracer
-provider (required before the first part). Customer code only ever sees
-`UserSessionManager`.
+lifecycle (start and end), reading the active part's id, span, and session part
+counters once reserved, incrementing per-part counts, subscribing to part
+start/end, and wiring the tracer provider (required before the first part).
+Customer code only ever sees `UserSessionManager`.
 
 The SDK init flow also reports its startup timings once, via
 `recordSDKStartupTimings`. They are page-scoped constants, so they are stamped
@@ -171,10 +173,9 @@ user session's `nextUserSessionId` as the ID, its number plus one, and its ID as
 the previous ID. Every tab that creates the successor therefore creates the same
 one. With no predecessor, or one stored by an SDK version without
 `nextUserSessionId`, the ID is random, and with no predecessor the number comes
-from the `embrace_user_session_number` counter. It then advances the
-within-session part index and the cross-visit part-number counter
-(`embrace_session_part_number`), marks a part active, persists the state, and
-arms the max-duration timer.
+from the `embrace_user_session_number` counter. It then marks a part active,
+persists the state, arms the max-duration timer, and starts reserving the
+part's counters (see [Session part counters](#session-part-counters)).
 
 ### Expiry
 
@@ -299,13 +300,13 @@ An idle part's end isn't recorded as activity.
 
 ### Keys
 
-| Key                            | Contents                                                                                                                                                    | Lifetime                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag, end reason)       | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
-| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                                   | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                               |
-| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                                   | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                                                                                      |
-| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                                                 | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                           |
-| `embrace_last_activity`        | JSON `{ ts, sessionPartId, sessionPartActivityTs }`: epoch milliseconds of the latest activity in any tab; the final candidate and its own latest activity. | Persisted across visits. Written at part start, on throttled input and redundant engagement events while a part is open, at a part end that doesn't end the user session, and when another tab's open part claims the final candidate.                                                                                                                                                            |
+| Key                            | Contents                                                                                                                                                    | Lifetime                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag, end reason)       | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, when a part's counters are reserved, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                                   | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                                                                    |
+| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                                   | Persisted across visits. Set to each part's number when IndexedDB hands it out, and incremented when IndexedDB can't be used.                                                                                                                                                                                                                                                                                                          |
+| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                                                 | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                                                                |
+| `embrace_last_activity`        | JSON `{ ts, sessionPartId, sessionPartActivityTs }`: epoch milliseconds of the latest activity in any tab; the final candidate and its own latest activity. | Persisted across visits. Written at part start, on throttled input and redundant engagement events while a part is open, at a part end that doesn't end the user session, and when another tab's open part claims the final candidate.                                                                                                                                                                                                 |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
@@ -338,6 +339,39 @@ In `addProperty(key, val, { lifespan: 'permanent' })`, the user-session-scoped
 entry for the same key is removed, so a key lives in one scope at a time.
 
 A storage write failure never terminates the user session.
+
+### Session part counters
+
+`emb.session_part_number` and `emb.user_session_part_index` are incremented in
+one IndexedDB `readwrite` transaction, in the
+`<namespace>__embrace_session_part_counters` database
+(`embrace_session_part_counters` without an app ID). Browsers run those
+transactions one at a time across tabs, so two parts started at once in
+different tabs get different values. `localStorage` has no such guarantee: two
+tabs can read the same value and write back the same increment.
+
+The database holds the part number and one part index, recorded with the user
+session it counts. A part in another user session starts its index over. Each
+increment starts from the `localStorage` values instead when they're higher, so
+numbering continues from SDK versions that count only there.
+
+When IndexedDB can't be used, `IndexedDBSessionPartCounters` increments the
+counters in `localStorage` instead (`LocalStorageSessionPartCounters`): the
+part number in `embrace_session_part_number`, and the part index from the
+user-session row's.
+
+The manager takes the counters as a required `sessionPartCounters` argument;
+`initSDK` passes `IndexedDBSessionPartCounters`. The increment runs
+asynchronously, so a part start doesn't wait on it:
+
+- Once it completes, the store writes the part number back to
+  `embrace_session_part_number`. If the part is still open, the manager sets
+  both counters on its span and records the index on the user-session row,
+  unless the row already holds a higher one. SDK versions that count only in
+  `localStorage` stay in step.
+- A part that ends first, for example at an unload right after it started, goes
+  out without either counter rather than with a guess that could repeat another
+  part's values. Its index isn't recorded on the row.
 
 ## Cross-tab behavior
 
@@ -479,22 +513,31 @@ another window).
 
 ### Stamped at session-part start
 
-| Attribute                                                | Value                                                                                            |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `emb.type`                                               | `ux.session_part`                                                                                |
-| `emb.state`                                              | `foreground`                                                                                     |
-| `emb.session_part_id`                                    | UUID unique to this part.                                                                        |
-| `emb.session_part_number`                                | 1-indexed monotonic count across all visits since the first visit, incremented per session part. |
-| `emb.session_part_start_reason`                          | One of `SessionPartStartReason`.                                                                 |
-| `emb.cold_start`                                         | `true` on the first part started by this manager instance, `false` thereafter.                   |
-| `emb.user_session_id`                                    | UUID of the enclosing user session.                                                              |
-| `emb.user_session_previous_id`                           | UUID of the prior user session; `''` on the first user session for this browser.                 |
-| `emb.user_session_number`                                | 1-indexed monotonic count across all visits since the first visit.                               |
-| `emb.user_session_part_index`                            | 1-indexed within the user session.                                                               |
-| `emb.user_session_start_ts`                              | Milliseconds since Unix epoch.                                                                   |
-| `emb.user_session_max_duration_seconds`                  | Whole seconds, frozen at session creation.                                                       |
-| `emb.user_session_inactivity_timeout_seconds`            | Whole seconds, frozen at session creation.                                                       |
-| `emb.user_session_foreground_inactivity_timeout_seconds` | Whole seconds, frozen at session creation.                                                       |
+| Attribute                                                | Value                                                                            |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `emb.type`                                               | `ux.session_part`                                                                |
+| `emb.state`                                              | `foreground`                                                                     |
+| `emb.session_part_id`                                    | UUID unique to this part.                                                        |
+| `emb.session_part_start_reason`                          | One of `SessionPartStartReason`.                                                 |
+| `emb.cold_start`                                         | `true` on the first part started by this manager instance, `false` thereafter.   |
+| `emb.user_session_id`                                    | UUID of the enclosing user session.                                              |
+| `emb.user_session_previous_id`                           | UUID of the prior user session; `''` on the first user session for this browser. |
+| `emb.user_session_number`                                | 1-indexed monotonic count across all visits since the first visit.               |
+| `emb.user_session_start_ts`                              | Milliseconds since Unix epoch.                                                   |
+| `emb.user_session_max_duration_seconds`                  | Whole seconds, frozen at session creation.                                       |
+| `emb.user_session_inactivity_timeout_seconds`            | Whole seconds, frozen at session creation.                                       |
+| `emb.user_session_foreground_inactivity_timeout_seconds` | Whole seconds, frozen at session creation.                                       |
+
+### Stamped once reserved
+
+Set on the part span once its counters are reserved, shortly after part start.
+A part that ends first goes out without them. See
+[Session part counters](#session-part-counters).
+
+| Attribute                     | Value                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| `emb.session_part_number`     | 1-indexed monotonic count across all visits since the first visit, incremented per session part. |
+| `emb.user_session_part_index` | 1-indexed within the user session.                                                               |
 
 ### Stamped at session-part end
 

@@ -6,6 +6,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
@@ -122,6 +123,7 @@ describe('UserTimingInstrumentation', () => {
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage = setupTestStorage();
     const userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,

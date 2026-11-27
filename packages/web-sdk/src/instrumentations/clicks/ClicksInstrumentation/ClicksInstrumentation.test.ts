@@ -3,6 +3,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import {
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -34,6 +35,7 @@ describe('ClicksInstrumentation', () => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),

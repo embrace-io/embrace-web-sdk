@@ -6,7 +6,7 @@ export { createSafeProxy } from './createSafeProxy/index.ts';
 export { generateUUID } from './generateUUID.ts';
 export { generateWebVitalID } from './generateWebVitalID.ts';
 export { getBfcacheNotRestoredReasons } from './getBfcacheNotRestoredReasons.ts';
-export { getIncrementedCount } from './getIncrementedCount.ts';
+export { getIncrementedCount, getStoredCount } from './getIncrementedCount.ts';
 export {
   type EmbracePerformanceNavigationTiming,
   getNonBaselineNavigationTiming,

@@ -11,6 +11,7 @@ import {
 import * as sinon from 'sinon';
 import { UUID_PATTERN } from '../../../../../../tests/utils/constants.ts';
 import {
+  InMemorySessionPartCounters,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -115,6 +116,7 @@ describe('ReactRouterV6Data', () => {
 
   before(() => {
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),

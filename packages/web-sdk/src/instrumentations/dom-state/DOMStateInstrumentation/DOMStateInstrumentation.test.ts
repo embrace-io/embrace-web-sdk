@@ -3,6 +3,7 @@ import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import {
+  InMemorySessionPartCounters,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -167,6 +168,7 @@ describe('DOMStateInstrumentation', () => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf: new OTelPerformanceManager(),

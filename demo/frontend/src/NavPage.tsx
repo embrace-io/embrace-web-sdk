@@ -18,7 +18,6 @@ const NavPage = ({
   // Resolve at render time, not module load: the proxy's getUserSessionManager()
   // returns the underlying manager directly, and at module load that's still
   // the no-op stand-in (setupSDK runs after this module's imports resolve).
-  // Cast to the concrete manager to read getUserSessionAttributes (not on the proxy).
   const userSessionManager = session.getUserSessionManager();
   const [sessionPartId, setSessionPartId] = useState<string | null>(null);
   const [userSessionPartIndex, setUserSessionPartIndex] = useState<
@@ -30,9 +29,9 @@ const NavPage = ({
 
   const updateSessionPart = useCallback(() => {
     setSessionPartId(userSessionManager.getSessionPartId());
-    const attrs = userSessionManager.getUserSessionAttributes();
-    setUserSessionPartIndex(attrs?.['emb.user_session_part_index'] ?? null);
-    setSessionPartNumber(attrs?.['emb.session_part_number'] ?? null);
+    const counts = userSessionManager.getSessionPartCounts();
+    setUserSessionPartIndex(counts?.userSessionPartIndex ?? null);
+    setSessionPartNumber(counts?.sessionPartNumber ?? null);
   }, [userSessionManager]);
 
   useEffect(() => {
@@ -41,9 +40,12 @@ const NavPage = ({
       userSessionManager.addSessionPartStartedListener(updateSessionPart);
     const unsubscribeEnd =
       userSessionManager.addSessionPartEndedListener(updateSessionPart);
+    // The counters are set shortly after a part starts, with no event for it.
+    const pollInterval = setInterval(updateSessionPart, 500);
     return () => {
       unsubscribeStart();
       unsubscribeEnd();
+      clearInterval(pollInterval);
     };
   }, [userSessionManager, updateSessionPart]);
 

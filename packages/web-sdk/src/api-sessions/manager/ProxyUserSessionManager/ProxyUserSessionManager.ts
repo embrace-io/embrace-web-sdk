@@ -7,6 +7,7 @@ import type {
   UserSessionAttributes,
   UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import type { SessionPartCounts } from '../../../managers/EmbraceUserSessionManager/utils/index.ts';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -112,6 +113,10 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
 
   public getSessionPartId(): string | null {
     return this.getDelegate().getSessionPartId();
+  }
+
+  public getSessionPartCounts(): SessionPartCounts | null {
+    return this.getDelegate().getSessionPartCounts();
   }
 
   public getSessionPartIdAt(timestampEpochMillis: number): string | null {

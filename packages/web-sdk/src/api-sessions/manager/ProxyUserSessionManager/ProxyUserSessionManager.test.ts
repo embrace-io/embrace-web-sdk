@@ -18,6 +18,9 @@ describe('ProxyUserSessionManager', () => {
       // Part identity
       getSessionPartId: sinon.stub().returns('part-id'),
       getSessionPartIdAt: sinon.stub().returns('part-id'),
+      getSessionPartCounts: sinon
+        .stub()
+        .returns({ sessionPartNumber: 7, userSessionPartIndex: 3 }),
       getSessionPartSpan: sinon.stub().returns({} as Span),
       // Part lifecycle
       startSessionPartInternal: sinon.stub(),
@@ -84,6 +87,13 @@ describe('ProxyUserSessionManager', () => {
       expect(proxyUserSessionManager.getUserSessionStartTime()).to.equal(
         123_456,
       );
+    });
+
+    it('should delegate getSessionPartCounts to the userSessionManager', () => {
+      expect(proxyUserSessionManager.getSessionPartCounts()).to.deep.equal({
+        sessionPartNumber: 7,
+        userSessionPartIndex: 3,
+      });
     });
 
     it('should delegate endUserSession to the userSessionManager', () => {

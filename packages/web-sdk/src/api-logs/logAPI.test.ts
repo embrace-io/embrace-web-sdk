@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  InMemorySessionPartCounters,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../tests/utils/index.ts';
@@ -41,6 +42,7 @@ describe('logAPI', () => {
       const perf = new OTelPerformanceManager();
       manager = new EmbraceLogManager({
         userSessionManager: new EmbraceUserSessionManager({
+          sessionPartCounters: new InMemorySessionPartCounters(),
           dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
           limitManager,
           perf,

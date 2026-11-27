@@ -16,6 +16,7 @@ import sinonChai from 'sinon-chai';
 import {
   FailingStorage,
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -102,6 +103,7 @@ describe('EmbraceLogManager', () => {
 
     storage = setupTestStorage();
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,

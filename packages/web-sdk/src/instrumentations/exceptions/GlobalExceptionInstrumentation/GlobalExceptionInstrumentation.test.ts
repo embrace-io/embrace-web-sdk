@@ -4,6 +4,7 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
+  InMemorySessionPartCounters,
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
@@ -51,6 +52,7 @@ describe('GlobalExceptionInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
     logManager = new EmbraceLogManager({
       userSessionManager: new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager,
         perf,

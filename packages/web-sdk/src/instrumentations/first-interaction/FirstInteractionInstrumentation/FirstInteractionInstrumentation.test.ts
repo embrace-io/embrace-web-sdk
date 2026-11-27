@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import {
   createTestDynamicConfigManager,
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   setupTestLogExporter,
   setupTestStorage,
 } from '../../../../tests/utils/index.ts';
@@ -37,6 +38,7 @@ describe('FirstInteractionInstrumentation', () => {
     document.body.append(testContainer);
 
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),

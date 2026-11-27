@@ -5,6 +5,7 @@ import type {
 } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import {
+  InMemorySessionPartCounters,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -158,6 +159,7 @@ describe('MaxScrollDepthInstrumentation', () => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf: new OTelPerformanceManager(),

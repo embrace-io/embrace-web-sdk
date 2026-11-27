@@ -40,6 +40,7 @@ import {
   EmbraceTracerProvider,
   EmbraceUserManager,
   EmbraceUserSessionManager,
+  IndexedDBSessionPartCounters,
 } from '../managers/index.ts';
 import {
   BrowserLogRecordProcessor,
@@ -244,6 +245,8 @@ export const initSDK = (
       perf,
       registerGlobally,
       sdkLocalStorage,
+      namespace,
+      diag: diagLogger,
       visibilityDoc: window.document,
       dynamicConfigManager,
     });
@@ -414,6 +417,8 @@ const setupUserSession = ({
   perf,
   registerGlobally,
   sdkLocalStorage,
+  namespace,
+  diag,
   visibilityDoc,
   dynamicConfigManager,
 }: SetupUserSessionArgs) => {
@@ -423,6 +428,11 @@ const setupUserSession = ({
     storage: sdkLocalStorage,
     visibilityDoc,
     dynamicConfigManager,
+    sessionPartCounters: new IndexedDBSessionPartCounters({
+      namespace,
+      storage: sdkLocalStorage,
+      diag,
+    }),
   });
 
   if (registerGlobally) {

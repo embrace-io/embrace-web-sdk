@@ -14,8 +14,6 @@ const mockAttributes: UserSessionAttributes = {
   'emb.user_session_id': 'USER_SESSION_ABC',
   'emb.user_session_previous_id': '',
   'emb.user_session_number': 1,
-  'emb.user_session_part_index': 3,
-  'emb.session_part_number': 7,
   'emb.user_session_start_ts': 1000,
   'emb.user_session_max_duration_seconds': 43200,
   'emb.user_session_inactivity_timeout_seconds': 1800,
@@ -116,10 +114,6 @@ describe('UserSessionLogRecordProcessor', () => {
 
     // Session-part-only keys must not appear on logs.
     void expect(logRecord.attributes['emb.user_session_number']).to.be
-      .undefined;
-    void expect(logRecord.attributes['emb.user_session_part_index']).to.be
-      .undefined;
-    void expect(logRecord.attributes['emb.session_part_number']).to.be
       .undefined;
     void expect(logRecord.attributes['emb.user_session_start_ts']).to.be
       .undefined;

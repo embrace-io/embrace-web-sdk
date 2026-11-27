@@ -4,6 +4,7 @@ import { createBrowserHistory } from 'history';
 import { Route, Router, Switch, useHistory } from 'react-router-domv4v5';
 import { UUID_PATTERN } from '../../../../../../tests/utils/constants.ts';
 import {
+  InMemorySessionPartCounters,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -77,6 +78,7 @@ describe('ReactRouterV5Legacy', () => {
 
   before(() => {
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),

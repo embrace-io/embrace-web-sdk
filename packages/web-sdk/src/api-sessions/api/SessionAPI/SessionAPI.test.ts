@@ -18,6 +18,7 @@ const createMockUserSessionManager = (): UserSessionManagerInternal => ({
   // Part identity
   getSessionPartId: sinon.stub().returns('partId'),
   getSessionPartIdAt: sinon.stub().returns('partId'),
+  getSessionPartCounts: sinon.stub().returns(null),
   getSessionPartSpan: sinon.stub().returns({} as Span),
   // Part lifecycle
   startSessionPartInternal: sinon.stub(),
