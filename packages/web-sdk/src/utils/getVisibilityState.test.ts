@@ -9,7 +9,6 @@ describe('getVisibilityState', () => {
     expect(
       getVisibilityState({
         visibilityState: 'visible',
-        hasFocus: () => true,
       }),
     ).to.equal('foreground');
   });
@@ -18,7 +17,6 @@ describe('getVisibilityState', () => {
     expect(
       getVisibilityState({
         visibilityState: 'hidden',
-        hasFocus: () => false,
       }),
     ).to.equal('background');
   });

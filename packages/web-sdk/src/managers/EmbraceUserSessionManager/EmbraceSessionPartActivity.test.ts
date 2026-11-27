@@ -59,7 +59,6 @@ class FakeTarget implements EventTarget {
 
 class FakeVisibilityDoc extends EventTarget {
   public visibilityState: DocumentVisibilityState = 'visible';
-  public hasFocus = (): boolean => true;
 }
 
 describe('EmbraceUserSessionManager browser activity', () => {
@@ -114,12 +113,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
   };
 
   const fireBlur = () => {
-    visibilityDoc.hasFocus = () => false;
     target.dispatchEvent(new Event('blur'));
   };
 
   const fireFocus = () => {
-    visibilityDoc.hasFocus = () => true;
     target.dispatchEvent(new Event('focus'));
   };
 
@@ -128,7 +125,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // nav variant fires no blur and is exercised by fireVisibilityChange('hidden')
   // directly. See README for the verified cross-engine ordering.
   const fireFocusShiftingUnload = () => {
-    visibilityDoc.hasFocus = () => false;
     target.dispatchEvent(new Event('blur'));
     visibilityDoc.visibilityState = 'hidden';
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
@@ -140,7 +136,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // observes visibilitychange-to-'hidden' since pagehide is not listened to.
   const fireTabHidden = () => {
     visibilityDoc.visibilityState = 'hidden';
-    visibilityDoc.hasFocus = () => false;
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
   };
 
@@ -149,7 +144,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // first while still 'hidden', then visibilitychange to 'visible' starts
   // the part. The trailing pageshow has no listener.
   const fireBfcacheRestore = () => {
-    visibilityDoc.hasFocus = () => true;
     target.dispatchEvent(new Event('focus'));
     visibilityDoc.visibilityState = 'visible';
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
@@ -291,19 +285,22 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('ends the active part with reason background when the window loses focus', () => {
+  it('keeps the part open, without counting it as activity, when a visible window loses focus', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     fireBlur();
 
-    expect(endReasons()).to.deep.equal(['background']);
-    void expect(manager.getSessionPartId()).to.be.null;
+    void expect(manager.getSessionPartId()).to.not.be.null;
+
+    clock.tick(1);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
   });
 
-  it('starts a new part with reason foreground when focus returns to a visible tab', () => {
+  it('starts a new part with reason foreground when focus reaches a visible tab without one', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
-    fireBlur();
+    clock.tick(FOREGROUND_INACTIVITY_MS);
     void expect(manager.getSessionPartId()).to.be.null;
 
     fireFocus();
@@ -312,15 +309,17 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('ignores activity events on a visible-but-unfocused tab', () => {
+  it('counts activity on a visible window that lost focus', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     fireBlur();
 
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     fireActivity();
 
-    // visibilityState='visible' but hasFocus()=false: side-by-side / DevTools-
-    // undocked case. No new part should start from activity in the unfocused
-    // window.
+    // Side by side, or behind another focused window: the tab is still
+    // visible, so its input keeps the part open.
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
+    expect(endReasons()).to.deep.equal([]);
     expect(startReasons()).to.deep.equal(['init']);
   });
 
@@ -375,15 +374,13 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('re-arms the foreground inactivity timer when an engagement event fires while already engaged and active', () => {
+  it('re-arms the foreground inactivity timer when focus arrives while a part is open', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
-    // Redundant focus event while the tab is still engaged and the part is
-    // still active (no blur/hide in between). This is the
-    // browser-quirk path: the engagement handler should re-arm the
-    // foreground inactivity timer rather than start a new part.
-    target.dispatchEvent(new Event('focus'));
+    // The user switches back to this visible window: the engagement handler
+    // re-arms the foreground inactivity timer rather than start a new part.
+    fireFocus();
 
     // The timer was re-armed at this tick, so it now needs another full
     // foreground inactivity timeout before it fires.
@@ -449,7 +446,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     expect(target.listenerCount('keydown')).to.equal(1);
     expect(target.listenerCount('focus')).to.equal(1);
-    expect(target.listenerCount('blur')).to.equal(1);
 
     manager._shutdown();
 
@@ -458,7 +454,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(target.listenerCount('mousemove')).to.equal(0);
     expect(target.listenerCount('scroll')).to.equal(0);
     expect(target.listenerCount('focus')).to.equal(0);
-    expect(target.listenerCount('blur')).to.equal(0);
 
     // visibilitychange listens on `visibilityDoc`, not `target`. Verify the
     // listener was unsubscribed by dispatching hidden and asserting no end.

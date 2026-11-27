@@ -217,10 +217,7 @@ export interface EmbraceUserSessionManagerArgs {
    * resolved at each user session creation.
    */
   dynamicConfigManager: DynamicConfigManager;
-  /**
-   * Document-shaped object used to gate part start/end on visibility +
-   * focus.
-   */
+  /** Document-shaped object used to gate part start/end on visibility. */
   visibilityDoc: VisibilityStateDocument;
   /**
    * Limit manager used for property/breadcrumb truncation and

@@ -326,7 +326,6 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should start a foreground session when the document is visible', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
-      hasFocus: () => true,
     };
     const localManager = new EmbraceUserSessionManager({
       sessionPartCounters: new InMemorySessionPartCounters(),
@@ -348,44 +347,25 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     );
   });
 
-  // Engagement gate is visibilityState === 'visible' && hasFocus(). Any
-  // other combination must block startSessionPartInternal. Visible+hasFocus
-  // is the happy path tested above.
-  const disengagedCases: Array<{
-    name: string;
-    visibilityState: DocumentVisibilityState;
-    hasFocus: boolean;
-  }> = [
-    { name: 'hidden', visibilityState: 'hidden', hasFocus: false },
-    {
-      name: 'visible but unfocused',
-      visibilityState: 'visible',
-      hasFocus: false,
-    },
-  ];
-
-  for (const { name, visibilityState, hasFocus } of disengagedCases) {
-    it(`should skip starting a session part when the document is ${name}`, () => {
-      const visibilityDoc: VisibilityStateDocument = {
-        visibilityState,
-        hasFocus: () => hasFocus,
-      };
-      const localManager = new EmbraceUserSessionManager({
-        sessionPartCounters: new InMemorySessionPartCounters(),
-        visibilityDoc,
-        limitManager,
-        perf,
-        storage,
-        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-      });
-      localManager.startSessionPartInternal({ reason: 'init' });
-      void expect(localManager.getSessionPartId()).to.be.null;
-      void expect(localManager.getSessionPartSpan()).to.be.null;
-
-      const finishedSpans = memoryExporter.getFinishedSpans();
-      expect(finishedSpans).to.have.lengthOf(0);
+  it('should skip starting a session part when the document is hidden', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'hidden',
+    };
+    const localManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
+      visibilityDoc,
+      limitManager,
+      perf,
+      storage,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-  }
+    localManager.startSessionPartInternal({ reason: 'init' });
+    void expect(localManager.getSessionPartId()).to.be.null;
+    void expect(localManager.getSessionPartSpan()).to.be.null;
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(0);
+  });
 
   it('should call the session start listener when starting a session', () => {
     const listener = sinon.stub();
@@ -2409,18 +2389,16 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       // When max-duration fires while the tab is not engaged, the old user
       // session is ended and storage is cleared, but the rollover part's start
       // is no-op because startSessionPartInternal refuses to begin a part
-      // while the tab is hidden / unfocused. The next engagement event
+      // while the tab is hidden. The next engagement event
       // (handled by the manager's browser-activity listeners in production) is
       // what starts the new part.
-      const visibilityState: {
-        current: 'visible' | 'hidden';
-        focused: boolean;
-      } = { current: 'visible', focused: true };
+      const visibilityState: { current: 'visible' | 'hidden' } = {
+        current: 'visible',
+      };
       const visibilityDoc: VisibilityStateDocument = {
         get visibilityState() {
           return visibilityState.current;
         },
-        hasFocus: () => visibilityState.focused,
       };
 
       const localManager = new EmbraceUserSessionManager({
@@ -2448,7 +2426,6 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       // Tab is no longer engaged before the max-duration boundary.
       visibilityState.current = 'hidden';
-      visibilityState.focused = false;
 
       clock.tick(3601 * 1000);
 
@@ -2471,7 +2448,6 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       // call startSessionPartInternal({ reason: 'foreground' }) in production;
       // simulate that here. A new user session is created.
       visibilityState.current = 'visible';
-      visibilityState.focused = true;
       localManager.startSessionPartInternal({ reason: 'foreground' });
 
       void expect(localManager.getSessionPartId()).to.not.be.null;
@@ -3110,7 +3086,6 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       readyState: DocumentReadyState,
     ): VisibilityStateDocument => ({
       visibilityState: 'visible',
-      hasFocus: () => true,
       readyState,
     });
 

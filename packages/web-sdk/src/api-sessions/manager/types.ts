@@ -138,7 +138,7 @@ export type StartSessionOptions = {
 
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
-  | 'foreground' // tab became engaged via visibilitychange (visible) or focus while no part was active
+  | 'foreground' // visibilitychange to visible, or focus on a visible tab, while no part was active
   | 'web_activity' // user input on an engaged tab with no active part, typically after foreground inactivity ended the previous part
   | 'web_soft_navigation' // soft navigation started the next part in the same user session
   | 'user_session_rollover'; // user-session rollover forced a new part (endUserSession API / max-duration timer, in this tab or another)

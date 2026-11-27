@@ -75,20 +75,22 @@ export interface DynamicSDKConfig {
   userSessionMaxDurationSeconds?: number;
 
   /**
-   * Time with no focused and visible tab (including all tabs closed) after
+   * Time without user activity in any tab (including all tabs closed) after
    * which the user session expires, in seconds. Expiry is applied when the
-   * next session part starts. Set by remote config.
+   * next session part starts, or when an idle session part ends. Set by
+   * remote config.
    *
    * **default**: 1800 seconds (30 minutes)
    */
   userSessionInactivityTimeoutSeconds?: number;
 
   /**
-   * Time without user input on a focused and visible tab after which the
-   * session part and its user session end, in seconds. Input within 30 seconds
-   * of the last timer reset does not reset it again, so the timer can fire up
-   * to 30 seconds earlier than this value after the last input. Set by remote
-   * config.
+   * Time without user input on a visible tab after which its session part
+   * ends, in seconds. The user session ends with it unless another tab had
+   * activity within `userSessionInactivityTimeoutSeconds`. Input within 30
+   * seconds of the last timer reset does not reset it again, so the timer can
+   * fire up to 30 seconds earlier than this value after the last input. Set by
+   * remote config.
    *
    * **default**: 1800 seconds (30 minutes)
    */
