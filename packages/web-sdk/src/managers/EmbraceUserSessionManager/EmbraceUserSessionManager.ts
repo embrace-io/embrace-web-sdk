@@ -408,7 +408,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const activeSessionPartId = generateUUID();
     const previouslyRecordedCounts = this._nextSessionPartCounts;
 
-    this._beginUserSessionForPartStart();
+    this._beginUserSessionForPartStart(activeSessionPartId);
 
     const attributes: Attributes = {
       ...this.getUserSessionAttributes(),
@@ -476,10 +476,13 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._userSessionStore.read()?.userSessionId ?? null;
     const sessionPartId = this._activeSessionPartId;
     // Every tab's open part ends with the user session, but only one is the
-    // final part: the one with the latest activity when it ended.
+    // final part: the final candidate when it ended.
     const finalSessionPartId =
       endsUserSession && partUserSessionId !== null
-        ? this._userSessionStore.readFinalSessionPartId(partUserSessionId)
+        ? this._userSessionStore.readFinalSessionPartId(
+            partUserSessionId,
+            sessionPartId,
+          )
         : null;
     const isFinalSessionPart =
       endsUserSession && finalSessionPartId === sessionPartId;
@@ -816,7 +819,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * non-null, non-expired state, so `getUserSessionAttributes()` is
    * guaranteed non-null after this.
    */
-  private _beginUserSessionForPartStart(): void {
+  private _beginUserSessionForPartStart(sessionPartId: string): void {
     const now = this._perf.getNow();
     const { state } = this._loadOrCreateUserSessionState(now);
 
@@ -835,7 +838,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     };
 
     this._userSessionStore.write(partState);
-    this._userSessionStore.pin(partState);
+    this._userSessionStore.pin(partState, sessionPartId);
   }
 
   /**
@@ -1115,7 +1118,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _handleEngagementTransition(source: string): void {
     try {
       const engaged = isTabEngaged(this._visibilityDoc);
-      const active = this._activeSessionPartId !== null;
+      const sessionPartId = this._activeSessionPartId;
+      const active = sessionPartId !== null;
       if (!engaged && active) {
         this._diag.debug(`tab disengaged via ${source}; ending current part`);
         this.endSessionPartInternal({ reason: 'background' });
@@ -1133,7 +1137,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         // a tab the user switches back to the one with the latest activity.
         this._userSessionStore.recordActivity(
           this._perf.getNow(),
-          this._activeSessionPartId,
+          sessionPartId,
         );
         this._startSessionPartInactivityTimer();
       }

@@ -132,10 +132,11 @@ isolated from the span end, so a poisoned property value cannot prevent the span
 from ending. Part-end subscribers are notified.
 
 If the end reason doesn't end the user session (in practice `background`), the
-user session continues: the part end is recorded as the latest activity, with
-no session part, so the inactivity timeout counts from when the user left the
-tab. An inactivity deadline of `now + userSessionInactivityTimeoutSeconds * 1000`
-is also written into the state blob for SDK versions that expire user sessions
+user session continues: the part end is recorded as the latest activity, so the
+inactivity timeout counts from when the user left the tab, and a part that was
+the final candidate releases it (see [Last activity](#last-activity)). An
+inactivity deadline of `now + userSessionInactivityTimeoutSeconds * 1000` is
+also written into the state blob for SDK versions that expire user sessions
 from it. Both use the actual call time rather than any anchored span-end
 timestamp, so an anchored part end cannot move them earlier. The
 max-duration deadline is fixed at creation and keeps running, so it is not
@@ -148,8 +149,9 @@ or site data was cleared, the part end leaves storage alone.
 
 When the end reason also ends the user session (`user_session_ended` or
 `web_foreground_inactivity`), every tab's open part ends with it, but only the
-part with the latest activity when the user session ended is the final one. The
-tab that ends it records that part on the ended marker (`finalSessionPartId`),
+final candidate when the user session ended is the final one (see
+[Last activity](#last-activity)). The tab that ends it records that part on the
+ended marker (`finalSessionPartId`),
 and the next user session copies it (`previousFinalSessionPartId`), so a part
 that starts in the next user session first can't take the flag from one that
 ends after it. The final part's span is additionally stamped
@@ -194,20 +196,30 @@ retroactively receives `emb.is_final_session_part`.
 
 ### Last activity
 
-Every tab records the latest activity in `embrace_last_activity`, with the
-session part it happened in:
+Every tab records the latest activity in `embrace_last_activity` (`ts`), with
+the final candidate: the open session part with the latest activity of its own
+(`sessionPartId`, `sessionPartActivityTs`). It's written:
 
 - at part start
 - on throttled user input, and on a redundant focus or visibility event, while
   a part is open
-- at a part end that doesn't end the user session, keeping the stored session
-  part unless it's the one that ended, so another tab's open part stays the
-  final candidate
+- at a part end that doesn't end the user session
 
-A write keeps the later of the stored and new times, and one at the same time
-replaces the stored one, so a part starting at a rollover's boundary wins over
-the part that ended there. An inactivity end records nothing, since the user
-was idle.
+`ts` keeps the later of the stored and new times. A part's activity makes it the
+final candidate when it's at least as recent as the candidate's, so a part
+starting at a rollover's boundary wins over the part that ended there.
+
+When the candidate's part ends without ending the user session, it releases the
+candidate. Every other tab receives that write as a `storage` event, and a tab
+whose open part has later activity of its own than the named candidate, or
+finds none named, writes its part in instead. So the candidate stays an open
+part when the part with the latest activity ends first, when another tab writes
+from a stale read, and when tab clocks disagree.
+
+When a user session ends, the candidate is the final part. While none is named
+yet, for example in the milliseconds before another tab's claim arrives, the
+part of the tab that ends the user session is final. An inactivity end records
+nothing, since the user was idle.
 
 ### Termination
 
@@ -277,13 +289,13 @@ the 30 second throttle, and cleared on session-part end.
 
 ### Keys
 
-| Key                            | Contents                                                                                                                                              | Lifetime                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag, end reason) | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
-| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                             | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                               |
-| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                             | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                                                                                      |
-| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                                           | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                           |
-| `embrace_last_activity`        | JSON `{ ts, sessionPartId }`: epoch milliseconds of the latest activity in any tab, and the session part it happened in, or `null`.                   | Persisted across visits. Written at part start, on throttled input and redundant engagement events while a part is open, and at a part end that doesn't end the user session.                                                                                                                                                                                                                     |
+| Key                            | Contents                                                                                                                                                    | Lifetime                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag, end reason)       | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                                   | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                               |
+| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                                   | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                                                                                      |
+| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                                                 | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                           |
+| `embrace_last_activity`        | JSON `{ ts, sessionPartId, sessionPartActivityTs }`: epoch milliseconds of the latest activity in any tab; the final candidate and its own latest activity. | Persisted across visits. Written at part start, on throttled input and redundant engagement events while a part is open, at a part end that doesn't end the user session, and when another tab's open part claims the final candidate.                                                                                                                                                            |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
@@ -476,18 +488,18 @@ another window).
 
 ### Stamped at session-part end
 
-| Attribute                             | Condition                                                                                                                                        |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `emb.session_part_end_reason`         | Always. One of `SessionPartEndReason`.                                                                                                           |
-| `emb.sdk_startup_duration`            | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration.                                                   |
-| `emb.sdk_load_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran.                                   |
-| `emb.sdk_init_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered.                                      |
-| `emb.page_load`                       | Cold-start part only. `true` when `document.readyState` was `complete` at part end.                                                              |
-| `emb.is_final_session_part = 1`       | When the end reason ends the user session (`user_session_ended` or `web_foreground_inactivity`) and the part had the latest activity in any tab. |
-| `emb.user_session_termination_reason` | On the final part, when the end reason is known: always for this tab's own ends, and for another tab's end when its ended marker records one.    |
-| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes to the part's user session.                                                                   |
-| `emb.app.applied_limit.*`             | Diagnostic counts from the limit manager.                                                                                                        |
-| Counter keys                          | Per-part counts populated by instrumentations.                                                                                                   |
+| Attribute                             | Condition                                                                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `emb.session_part_end_reason`         | Always. One of `SessionPartEndReason`.                                                                                                        |
+| `emb.sdk_startup_duration`            | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration.                                                |
+| `emb.sdk_load_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran.                                |
+| `emb.sdk_init_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered.                                   |
+| `emb.page_load`                       | Cold-start part only. `true` when `document.readyState` was `complete` at part end.                                                           |
+| `emb.is_final_session_part = 1`       | When the end reason ends the user session (`user_session_ended` or `web_foreground_inactivity`) and the part is the final candidate.          |
+| `emb.user_session_termination_reason` | On the final part, when the end reason is known: always for this tab's own ends, and for another tab's end when its ended marker records one. |
+| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes to the part's user session.                                                                |
+| `emb.app.applied_limit.*`             | Diagnostic counts from the limit manager.                                                                                                     |
+| Counter keys                          | Per-part counts populated by instrumentations.                                                                                                |
 
 ### Stamped on every other span
 

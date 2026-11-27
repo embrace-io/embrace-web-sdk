@@ -110,7 +110,7 @@ describe('UserSessionStore', () => {
       });
       state = createState();
       store.write(state);
-      store.pin(state);
+      store.pin(state, 'part-a');
     });
 
     it('reads the pinned user session after another tab replaces it', () => {
@@ -205,17 +205,40 @@ describe('UserSessionStore', () => {
       void expect(store.readLastActivity()).to.be.null;
     });
 
-    it('keeps the later activity', () => {
+    it('makes a later activity the final candidate', () => {
+      store.recordActivity(1000, 'part-a');
+      store.recordActivity(2000, 'part-b');
+
+      expect(store.readLastActivity()).to.deep.equal({
+        ts: 2000,
+        sessionPartId: 'part-b',
+        sessionPartActivityTs: 2000,
+      });
+    });
+
+    it('keeps the later activity and its final candidate', () => {
       store.recordActivity(2000, 'part-a');
       store.recordActivity(1000, 'part-b');
 
       expect(store.readLastActivity()).to.deep.equal({
         ts: 2000,
         sessionPartId: 'part-a',
+        sessionPartActivityTs: 2000,
       });
     });
 
-    it('keeps the stored part when another part ends', () => {
+    it('replaces the final candidate on an activity at the same time', () => {
+      store.recordActivity(2000, 'part-a');
+      store.recordActivity(2000, 'part-b');
+
+      expect(store.readLastActivity()).to.deep.equal({
+        ts: 2000,
+        sessionPartId: 'part-b',
+        sessionPartActivityTs: 2000,
+      });
+    });
+
+    it('keeps the final candidate when another part ends', () => {
       store.recordActivity(1000, 'part-a');
 
       store.recordActivityAfterPartEnd(2000, 'part-b');
@@ -223,10 +246,11 @@ describe('UserSessionStore', () => {
       expect(store.readLastActivity()).to.deep.equal({
         ts: 2000,
         sessionPartId: 'part-a',
+        sessionPartActivityTs: 1000,
       });
     });
 
-    it('clears the stored part when that part ends', () => {
+    it('releases the final candidate when its part ends', () => {
       store.recordActivity(1000, 'part-a');
 
       store.recordActivityAfterPartEnd(2000, 'part-a');
@@ -234,16 +258,21 @@ describe('UserSessionStore', () => {
       expect(store.readLastActivity()).to.deep.equal({
         ts: 2000,
         sessionPartId: null,
+        sessionPartActivityTs: null,
       });
     });
 
-    it('replaces an activity at the same time', () => {
-      store.recordActivity(2000, null);
-      store.recordActivity(2000, 'part-a');
+    it('makes an earlier activity the final candidate when none is named', () => {
+      // Another tab's clock runs ahead, so its part end reads later.
+      store.recordActivity(1000, 'part-a');
+      store.recordActivityAfterPartEnd(3000, 'part-a');
+
+      store.recordActivity(2000, 'part-b');
 
       expect(store.readLastActivity()).to.deep.equal({
-        ts: 2000,
-        sessionPartId: 'part-a',
+        ts: 3000,
+        sessionPartId: 'part-b',
+        sessionPartActivityTs: 2000,
       });
     });
   });
@@ -295,6 +324,29 @@ describe('UserSessionStore', () => {
 
       void expect(store.readFinalSessionPartId('another')).to.be.null;
     });
+
+    it('is the ending part while the user session is stored live and no candidate is named', () => {
+      const state = createState();
+      store.write(state);
+      store.recordActivity(1000, 'part-a');
+      store.recordActivityAfterPartEnd(2000, 'part-a');
+
+      expect(
+        store.readFinalSessionPartId(state.userSessionId, 'part-b'),
+      ).to.equal('part-b');
+    });
+
+    it("isn't the ending part once the user session is ended", () => {
+      const state = createState();
+      store.write({ ...state, ended: true, finalSessionPartId: null });
+
+      void expect(store.readFinalSessionPartId(state.userSessionId, 'part-b'))
+        .to.be.null;
+    });
+
+    it("isn't the ending part when nothing is stored", () => {
+      void expect(store.readFinalSessionPartId('any', 'part-b')).to.be.null;
+    });
   });
 
   describe('changes from other tabs', () => {
@@ -343,7 +395,7 @@ describe('UserSessionStore', () => {
       );
       state = createState();
       listeningStore.write(state);
-      listeningStore.pin(state);
+      listeningStore.pin(state, 'part-a');
     });
 
     afterEach(() => {
@@ -394,7 +446,7 @@ describe('UserSessionStore', () => {
         previousUserSessionId: predecessor.userSessionId,
       };
       listeningStore.write(next);
-      listeningStore.pin(next);
+      listeningStore.pin(next, 'part-a');
 
       otherTabWrites({ ...predecessor, ended: true });
 
@@ -435,6 +487,120 @@ describe('UserSessionStore', () => {
       otherTabWrites(createState());
 
       expect(changes).to.deep.equal([]);
+    });
+  });
+
+  describe('final candidate claims from other tabs', () => {
+    const NAMESPACE = 'user-session-store-claim-test';
+    const NAMESPACED_LAST_ACTIVITY_KEY = `${NAMESPACE}__embrace_last_activity`;
+    let target: EventTarget;
+    let listeningStore: UserSessionStore;
+    let removeListener: () => void;
+
+    const storedLastActivity = () =>
+      JSON.parse(
+        localStorage.getItem(NAMESPACED_LAST_ACTIVITY_KEY) as string,
+      ) as unknown;
+
+    // A real `storage` event has to carry the real `localStorage`, which other
+    // test files share, so only this namespace's key is written.
+    const otherTabWrites = (value: object) => {
+      const newValue = JSON.stringify(value);
+
+      localStorage.setItem(NAMESPACED_LAST_ACTIVITY_KEY, newValue);
+      target.dispatchEvent(
+        new StorageEvent('storage', {
+          key: NAMESPACED_LAST_ACTIVITY_KEY,
+          newValue,
+          storageArea: localStorage,
+        }),
+      );
+    };
+
+    beforeEach(() => {
+      target = new EventTarget();
+      listeningStore = new UserSessionStore({
+        storage: new NamespacedStorage({
+          storage: localStorage,
+          namespace: NAMESPACE,
+          diag,
+        }),
+        diag,
+        target,
+      });
+      removeListener = listeningStore.addUserSessionChangeListener(() => {});
+    });
+
+    afterEach(() => {
+      removeListener();
+      localStorage.removeItem(NAMESPACED_LAST_ACTIVITY_KEY);
+    });
+
+    it("claims the final candidate another tab's part released, keeping the latest activity", () => {
+      listeningStore.pin(createState(), 'part-a');
+      listeningStore.recordActivity(1000, 'part-a');
+
+      otherTabWrites({
+        ts: 3000,
+        sessionPartId: null,
+        sessionPartActivityTs: null,
+      });
+
+      expect(storedLastActivity()).to.deep.equal({
+        ts: 3000,
+        sessionPartId: 'part-a',
+        sessionPartActivityTs: 1000,
+      });
+    });
+
+    it('claims the final candidate from a part with earlier activity', () => {
+      listeningStore.pin(createState(), 'part-a');
+      listeningStore.recordActivity(2000, 'part-a');
+
+      // Written from a read that missed this tab's activity.
+      otherTabWrites({
+        ts: 2001,
+        sessionPartId: 'part-b',
+        sessionPartActivityTs: 1000,
+      });
+
+      expect(storedLastActivity()).to.deep.equal({
+        ts: 2001,
+        sessionPartId: 'part-a',
+        sessionPartActivityTs: 2000,
+      });
+    });
+
+    it('leaves the final candidate to a part with later or equal activity', () => {
+      listeningStore.pin(createState(), 'part-a');
+      listeningStore.recordActivity(2000, 'part-a');
+
+      for (const sessionPartActivityTs of [3000, 2000]) {
+        const written = {
+          ts: 3000,
+          sessionPartId: 'part-b',
+          sessionPartActivityTs,
+        };
+
+        otherTabWrites(written);
+
+        expect(storedLastActivity()).to.deep.equal(written);
+      }
+    });
+
+    it("doesn't claim once this tab's part has ended", () => {
+      listeningStore.pin(createState(), 'part-a');
+      listeningStore.recordActivity(1000, 'part-a');
+      listeningStore.unpin();
+      const released = {
+        ts: 3000,
+        sessionPartId: null,
+        sessionPartActivityTs: null,
+      };
+
+      otherTabWrites(released);
+
+      expect(storedLastActivity()).to.deep.equal(released);
     });
   });
 

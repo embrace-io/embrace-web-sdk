@@ -15,19 +15,31 @@ export interface UserSessionStoreArgs {
   target?: EventTarget;
 }
 
-/** The latest activity in any tab, and the session part it happened in. */
+/**
+ * The latest activity in any tab, and the final candidate: the open session
+ * part with the latest activity of its own.
+ */
 export interface LastActivity {
   readonly ts: number;
+  /** Null right after the candidate's session part ends. */
   readonly sessionPartId: string | null;
+  /** The candidate's own latest activity. */
+  readonly sessionPartActivityTs: number | null;
 }
 
+const isTimestamp = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
 const isLastActivity = (value: unknown): value is LastActivity => {
-  const { ts, sessionPartId } = (value ?? {}) as Record<string, unknown>;
+  const { ts, sessionPartId, sessionPartActivityTs } = (value ?? {}) as Record<
+    string,
+    unknown
+  >;
 
   return (
-    typeof ts === 'number' &&
-    Number.isFinite(ts) &&
-    (sessionPartId === null || typeof sessionPartId === 'string')
+    isTimestamp(ts) &&
+    (sessionPartId === null || typeof sessionPartId === 'string') &&
+    (sessionPartActivityTs === null || isTimestamp(sessionPartActivityTs))
   );
 };
 
@@ -58,14 +70,16 @@ const isValidStoredUserSessionState = (
  * An ended user session stays in storage, marked `ended`, until the next one
  * replaces it, so the next one can follow it.
  *
- * While a session part is open, the store pins the part's user session. Reads
- * return it, refreshed from storage while storage still holds it, so the part
- * keeps reporting its own user session after another tab replaced, ended or
- * cleared it. Writes to it from then on only update the pin.
+ * While a session part is open, the store pins it: the part's user session and
+ * its latest activity. Reads return the pinned user session, refreshed from
+ * storage while storage still holds it, so the part keeps reporting its own
+ * user session after another tab replaced, ended or cleared it. Writes to it
+ * from then on only update the pin.
  *
  * Once listening, the store also follows `storage` events, which report other
  * tabs' writes, and reports when one ended, replaced or cleared the pinned user
- * session.
+ * session. When one leaves the final candidate to a session part with earlier
+ * activity, or to none, this tab's open session part takes it.
  */
 export class UserSessionStore {
   private readonly _storage: NamespacedStorage;
@@ -75,8 +89,14 @@ export class UserSessionStore {
   private _lastRaw: string | null = null;
   private _lastState: UserSessionState | null = null;
 
-  // Last value of stored user session this tab saw
-  private _pinned: UserSessionState | null = null;
+  // This tab's open session part: its user session, which reads return, and
+  // its latest activity, which the shared last activity only keeps while it's
+  // the final candidate.
+  private _pinned: {
+    readonly sessionPartId: string;
+    readonly state: UserSessionState;
+    readonly activityTs: number | null;
+  } | null = null;
 
   private readonly _target: EventTarget;
   private readonly _userSessionChangeListeners = new Set<
@@ -114,16 +134,16 @@ export class UserSessionStore {
   public read(): UserSessionState | null {
     const stored = this._readStored();
 
-    return this._pinned ?? stored;
+    return this._pinned?.state ?? stored;
   }
 
   /** Returns false when the state didn't reach storage. */
   public write(state: UserSessionState): boolean {
     if (
-      this._pinned?.userSessionId === state.userSessionId &&
+      this._pinned?.state.userSessionId === state.userSessionId &&
       !this._holdsLive(this._readStored(), state.userSessionId)
     ) {
-      this._pinned = state;
+      this._pinned = { ...this._pinned, state };
 
       return false;
     }
@@ -152,53 +172,80 @@ export class UserSessionStore {
   }
 
   /**
-   * Keeps the later of the stored activity and this one. An activity at the
-   * same time replaces the stored one, so a session part starting at a
+   * Records activity in this tab's open session part. It becomes the final
+   * candidate when its activity is at least as recent as the candidate's, or
+   * when none is named. A tie replaces, so a session part starting at a
    * rollover's boundary wins over the part that ended there.
    */
-  public recordActivity(ts: number, sessionPartId: string | null): void {
+  public recordActivity(ts: number, sessionPartId: string): void {
+    if (this._pinned?.sessionPartId === sessionPartId) {
+      this._pinned = { ...this._pinned, activityTs: ts };
+    }
+
     const stored = this.readLastActivity();
 
-    if (stored && stored.ts > ts) {
+    // An earlier activity than the candidate's is also earlier than the
+    // stored latest activity, so nothing changes.
+    if (
+      stored !== null &&
+      stored.sessionPartActivityTs !== null &&
+      ts < stored.sessionPartActivityTs
+    ) {
       return;
     }
 
-    this._writeLastActivity({ ts, sessionPartId });
+    this._writeLastActivity({
+      ts: Math.max(stored?.ts ?? ts, ts),
+      sessionPartId,
+      sessionPartActivityTs: ts,
+    });
   }
 
   /**
-   * Records the end of a session part that doesn't end the user session. The
-   * stored part stays the final candidate, unless it's the one that ended.
+   * Records the end of a session part that doesn't end the user session. A
+   * session part that was the final candidate releases it, for another tab's
+   * open session part to take.
    */
   public recordActivityAfterPartEnd(
     ts: number,
     endedSessionPartId: string,
   ): void {
     const stored = this.readLastActivity();
+    const releases = stored?.sessionPartId === endedSessionPartId;
 
-    if (stored && stored.ts > ts) {
+    if (stored && stored.ts >= ts && !releases) {
       return;
     }
 
     this._writeLastActivity({
-      ts,
-      sessionPartId:
-        stored?.sessionPartId === endedSessionPartId
-          ? null
-          : (stored?.sessionPartId ?? null),
+      ts: Math.max(stored?.ts ?? ts, ts),
+      sessionPartId: releases ? null : (stored?.sessionPartId ?? null),
+      sessionPartActivityTs: releases
+        ? null
+        : (stored?.sessionPartActivityTs ?? null),
     });
   }
 
   /**
    * The session part that's final for `userSessionId`: the one recorded when
-   * it ended, or, while it's still stored live or nothing is stored, the one
-   * with the latest activity. Null when neither is known.
+   * it ended, or, while it's still stored live or nothing is stored, the final
+   * candidate. While it's stored live and no candidate is named yet, for
+   * example right after the candidate's session part ended, the session part
+   * ending it in this tab, `endingSessionPartId`, is final. Null when none is
+   * known.
    */
-  public readFinalSessionPartId(userSessionId: string): string | null {
+  public readFinalSessionPartId(
+    userSessionId: string,
+    endingSessionPartId: string | null = null,
+  ): string | null {
     const stored = this._readStored();
 
-    if (!stored || (stored.userSessionId === userSessionId && !stored.ended)) {
+    if (!stored) {
       return this.readLastActivity()?.sessionPartId ?? null;
+    }
+
+    if (stored.userSessionId === userSessionId && !stored.ended) {
+      return this.readLastActivity()?.sessionPartId ?? endingSessionPartId;
     }
 
     if (stored.userSessionId === userSessionId) {
@@ -212,8 +259,9 @@ export class UserSessionStore {
     return null;
   }
 
-  public pin(state: UserSessionState): void {
-    this._pinned = state;
+  /** Holds `state` as the user session of this tab's open `sessionPartId`. */
+  public pin(state: UserSessionState, sessionPartId: string): void {
+    this._pinned = { sessionPartId, state, activityTs: null };
   }
 
   public unpin(): void {
@@ -226,7 +274,13 @@ export class UserSessionStore {
     try {
       const storageEvent = event as StorageEvent;
       const key = this._storage.keyChangedBy(storageEvent);
-      const pinned = this._pinned;
+      const pinned = this._pinned?.state;
+
+      if (key === EMBRACE_LAST_ACTIVITY_KEY) {
+        this._claimFinalCandidate();
+
+        return;
+      }
 
       if (!pinned || (key !== null && key !== EMBRACE_USER_SESSION_STATE_KEY)) {
         return;
@@ -265,6 +319,33 @@ export class UserSessionStore {
       this._diag.warn('Error handling a user session change', e);
     }
   };
+
+  // Another tab's write can release the final candidate, or leave it to a
+  // session part with earlier activity than this tab's open one, for example
+  // when it wrote from a stale read. A tie doesn't claim, so two tabs don't
+  // keep taking it from each other.
+  private _claimFinalCandidate(): void {
+    const pinned = this._pinned;
+    const activityTs = pinned?.activityTs ?? null;
+    const stored = this.readLastActivity();
+
+    if (
+      !pinned ||
+      activityTs === null ||
+      stored?.sessionPartId === pinned.sessionPartId ||
+      (stored !== null &&
+        stored.sessionPartActivityTs !== null &&
+        stored.sessionPartActivityTs >= activityTs)
+    ) {
+      return;
+    }
+
+    this._writeLastActivity({
+      ts: Math.max(stored?.ts ?? activityTs, activityTs),
+      sessionPartId: pinned.sessionPartId,
+      sessionPartActivityTs: activityTs,
+    });
+  }
 
   private _notifyUserSessionChange(change: UserSessionChange): void {
     for (const listener of this._userSessionChangeListeners) {
@@ -311,8 +392,11 @@ export class UserSessionStore {
   }
 
   private _refreshPinned(state: UserSessionState | null): void {
-    if (this._pinned && this._holdsLive(state, this._pinned.userSessionId)) {
-      this._pinned = state;
+    if (
+      this._pinned &&
+      this._holdsLive(state, this._pinned.state.userSessionId)
+    ) {
+      this._pinned = { ...this._pinned, state };
     }
   }
 
