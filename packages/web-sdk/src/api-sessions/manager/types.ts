@@ -151,7 +151,7 @@ export interface SessionPartStartedEvent {
 
 export type SessionPartEndReason =
   | 'background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
-  | 'web_foreground_inactivity' // no user input on the focused and visible tab for `userSessionForegroundInactivityTimeoutSeconds`; also ends the enclosing user session, and session parts open in other tabs end with it. The span ends when the timer fires
+  | 'web_foreground_inactivity' // no user input on this tab for `userSessionForegroundInactivityTimeoutSeconds`. Also ends the enclosing user session, and session parts open in other tabs with it, when no tab had activity within `userSessionInactivityTimeoutSeconds`. The span ends when the timer fires
   | 'web_soft_navigation' // rolled the part over on a soft navigation. Not final, the user session continues
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration), in this tab or another, or another tab replaced or cleared it; stamped on the span by the manager
 

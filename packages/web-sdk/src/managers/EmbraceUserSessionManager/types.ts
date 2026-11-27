@@ -123,10 +123,10 @@ export interface StartSessionPartOptions {
 export interface EndSessionPartOptions {
   readonly reason: SessionPartEndReason;
   /**
-   * Termination reason for the enclosing user session; only meaningful
-   * when the part-end reason also ends the user session
-   * (`user_session_ended` or `web_foreground_inactivity`), and stamped only
-   * when the part is the final one. Ignored otherwise.
+   * Termination reason for the enclosing user session, stamped only when the
+   * part is the final one. `user_session_ended` always ends the user session;
+   * `web_foreground_inactivity` ends it only with `inactivity`, when no tab had
+   * activity within the user-session timeout. Ignored otherwise.
    */
   readonly userSessionEndReason?: UserSessionEndReason;
   /** Epoch millis anchoring the part span end; defaults to now. */

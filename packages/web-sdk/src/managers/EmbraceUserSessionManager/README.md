@@ -108,19 +108,20 @@ by design.
 
 `SessionPartEndReason` enumerates every reason a session part can end:
 
-| Value                       | Trigger                                                                                                                                                                                                           |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `background`                | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires.                              |
-| `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because the focused and visible tab received no user input for that long, in this tab or another.     |
-| `web_soft_navigation`       | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately.                                                                        |
-| `user_session_ended`        | The active part is ended because its user session ended: a rollover triggered by manual `endUserSession()` or max-duration expiry, in this tab or another, or another tab replacing or clearing the user session. |
+| Value                       | Trigger                                                                                                                                                                                                                                                                                      |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `background`                | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires.                                                                                                         |
+| `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because this tab received no user input for that long. Also ends the user session when no tab had activity within `userSessionInactivityTimeoutSeconds`, in this tab or another. |
+| `web_soft_navigation`       | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately.                                                                                                                                                   |
+| `user_session_ended`        | The active part is ended because its user session ended: a rollover triggered by manual `endUserSession()` or max-duration expiry, in this tab or another, or another tab replacing or clearing the user session.                                                                            |
 
 The part-level `web_foreground_inactivity` is distinct from the
 user-session-level `inactivity` reason in the
 [`UserSessionEndReason`](#termination) table below: when the foreground
-inactivity timer fires it stamps `web_foreground_inactivity` as the part end
-reason and `inactivity` as the enclosing user session's termination reason on
-the same span, when it's the final part.
+inactivity timer ends the user session it stamps `web_foreground_inactivity` as
+the part end reason and `inactivity` as the enclosing user session's termination
+reason on the same span, when it's the final part. When it ends only the part,
+the span gets just `web_foreground_inactivity`.
 
 ### End behavior
 
@@ -147,14 +148,14 @@ and a part end that ends the user session marks the stored user session as
 ended, only while the stored user session is still that one. If another tab has replaced or ended it,
 or site data was cleared, the part end leaves storage alone.
 
-When the end reason also ends the user session (`user_session_ended` or
-`web_foreground_inactivity`), every tab's open part ends with it, but only the
-final candidate when the user session ended is the final one (see
-[Last activity](#last-activity)). The tab that ends it records that part on the
-ended marker (`finalSessionPartId`),
-and the next user session copies it (`previousFinalSessionPartId`), so a part
-that starts in the next user session first can't take the flag from one that
-ends after it. The final part's span is additionally stamped
+When the part end also ends the user session (`user_session_ended`, or
+`web_foreground_inactivity` with the `inactivity` termination reason), every
+tab's open part ends with it, but only the final candidate when the user session
+ended is the final one (see [Last activity](#last-activity)). The tab that ends
+it records that part on the ended marker (`finalSessionPartId`), and the next
+user session copies it (`previousFinalSessionPartId`), so a part that starts in
+the next user session first can't take the flag from one that ends after it. The
+final part's span is additionally stamped
 `emb.is_final_session_part = 1` and, when a `userSessionEndReason` is supplied,
 `emb.user_session_termination_reason`.
 
@@ -191,7 +192,8 @@ A stored user session is treated as over when any of the following holds:
   inactivity deadline written at the last part end decides instead.
 
 No timer runs for `userSessionInactivityTimeoutSeconds`. Expiry is checked at
-the next part start. A part span that has already been exported never
+the next part start, and when a part's foreground inactivity timer fires (see
+[Timers](#timers)). A part span that has already been exported never
 retroactively receives `emb.is_final_session_part`.
 
 ### Last activity
@@ -227,17 +229,18 @@ A user session ends and immediately attempts to start a part for the next one.
 This happens on a manual `endUserSession()` (reason `manual`) and when the
 max-duration timer fires (reason `max_duration_reached`).
 
-The foreground inactivity timer ends a user session differently: it ends the
-active part directly with the `inactivity` termination reason rather than going
+The foreground inactivity timer ends a user session differently, when no tab
+had activity within `userSessionInactivityTimeoutSeconds`: it ends the active
+part directly with the `inactivity` termination reason rather than going
 through a rollover.
 
 `UserSessionEndReason` defines all possible values:
 
-| Value                  | Trigger                                                   | Emitted by web SDK                                                                                                                                                                                                                                                                                                                      |
-| ---------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `manual`               | `endUserSession()` API call.                              | Yes                                                                                                                                                                                                                                                                                                                                     |
-| `max_duration_reached` | Max-duration timer fires.                                 | Yes                                                                                                                                                                                                                                                                                                                                     |
-| `inactivity`           | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| Value                  | Trigger                                                                                                                        | Emitted by web SDK                                                                                                                                                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manual`               | `endUserSession()` API call.                                                                                                   | Yes                                                                                                                                                                                                                                                                                                                                     |
+| `max_duration_reached` | Max-duration timer fires.                                                                                                      | Yes                                                                                                                                                                                                                                                                                                                                     |
+| `inactivity`           | Foreground inactivity timer fires while a part is active and no tab had activity within `userSessionInactivityTimeoutSeconds`. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On rollover the manager samples one boundary timestamp, ends the active part
 with that timestamp, marks the stored user session as ended, and starts
@@ -282,8 +285,15 @@ it due at `userSessionMaxEndTs`. It is not re-armed on session-part end. The
 delay is computed as the time remaining until that deadline, not the full
 duration value.
 
-The foreground inactivity timer is restarted on every activity event, subject to
-the 30 second throttle, and cleared on session-part end.
+The foreground inactivity timer is restarted on this tab's activity events,
+subject to the 30 second throttle, and cleared on session-part end. When it
+fires, this tab's part is idle:
+
+- If no tab had activity within `userSessionInactivityTimeoutSeconds`, it ends
+  the part and the user session, with the `inactivity` termination reason.
+- Otherwise it ends just the part, and the user session continues.
+
+An idle part's end isn't recorded as activity.
 
 ## Storage
 
