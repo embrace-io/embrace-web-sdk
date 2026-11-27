@@ -757,6 +757,82 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(manager.getUserSessionId()).to.equal(otherTab.getUserSessionId());
     });
 
+    it("keeps another tab's part final when a hidden tab's part ends after it", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = createOtherTab();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      const otherTabPartId = otherTab.getSessionPartId();
+      clock.tick(1000);
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      otherTab.endUserSession();
+
+      expect(
+        memoryExporter
+          .getFinishedSpans()
+          .find(
+            (span) => span.attributes['emb.session_part_id'] === otherTabPartId,
+          )?.attributes,
+      ).to.include({
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'manual',
+      });
+    });
+
+    it("marks the ending tab's part final when the part with the latest activity ended first", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partId = manager.getSessionPartId();
+      const otherTab = createOtherTab();
+      clock.tick(1000);
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(1000);
+      otherTab.endSessionPartInternal({ reason: 'background' });
+
+      manager.endUserSession();
+
+      expect(
+        memoryExporter
+          .getFinishedSpans()
+          .find((span) => span.attributes['emb.session_part_id'] === partId)
+          ?.attributes,
+      ).to.include({
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'manual',
+      });
+    });
+
+    it('keeps the part with the latest activity final after another tab started the next user session first', () => {
+      const createShortLivedTab = () =>
+        new EmbraceUserSessionManager({
+          diag,
+          storage,
+          limitManager,
+          perf,
+          visibilityDoc: window.document,
+          dynamicConfigManager: createTestDynamicConfigManager({
+            userSessionMaxDurationSeconds: 3600,
+            userSessionForegroundInactivityTimeoutSeconds: 3600,
+          }),
+        });
+      createShortLivedTab().startSessionPartInternal({ reason: 'init' });
+      const lastActiveTab = createShortLivedTab();
+      lastActiveTab.startSessionPartInternal({ reason: 'init' });
+      const lastActivePartId = lastActiveTab.getSessionPartId();
+
+      // The first tab's timer fires first, and its next part starts before
+      // the last active tab's part ends.
+      clock.tick(3600 * 1000);
+
+      const finalParts = memoryExporter
+        .getFinishedSpans()
+        .filter((span) => span.attributes['emb.is_final_session_part'] === 1);
+      expect(finalParts).to.have.lengthOf(1);
+      expect(finalParts[0].attributes).to.include({
+        'emb.session_part_id': lastActivePartId,
+        'emb.user_session_termination_reason': 'max_duration_reached',
+      });
+    });
+
     it("stamps the part's own user session when another tab starts the next one", () => {
       manager.startSessionPartInternal({ reason: 'init' });
       const partUserSessionId = manager.getUserSessionId();
@@ -1156,6 +1232,22 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(manager.getPreviousUserSessionId()).to.equal(endedUserSessionId);
     });
 
+    it("counts the inactivity timeout from a user session's start when the last activity is older", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+      clock.tick(5000 * 1000);
+      // Creates the next user session without any activity.
+      manager.addProperty('cart-size', '3');
+      const nextUserSessionId = manager.getUserSessionId();
+
+      manager.startSessionPartInternal({ reason: 'web_activity' });
+
+      expect(manager.getUserSessionId()).to.equal(nextUserSessionId);
+    });
+
     it('records an inactivity end on the ended marker', () => {
       manager.startSessionPartInternal({ reason: 'init' });
 
@@ -1223,12 +1315,14 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       manager.startSessionPartInternal({ reason: 'init' });
       const ended = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
-      // A row written by an SDK version without nextUserSessionId, expired.
+      // A row written by an SDK version without nextUserSessionId, which
+      // doesn't record the last activity either, expired.
       const { nextUserSessionId: _, ...withoutNextId } = storedState();
       inMemoryStorage.setItem(
         'embrace_user_session_state',
         JSON.stringify({ ...withoutNextId, inactivityDeadlineTs: 0 }),
       );
+      inMemoryStorage.removeItem('embrace_last_activity');
 
       manager.startSessionPartInternal({ reason: 'foreground' });
 
@@ -1498,11 +1592,13 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       otherTabStorage.clear();
       deliverOtherTabWrites();
 
+      // The clear also removed the last activity, so no part is the final one.
       const { attributes } = memoryExporter.getFinishedSpans()[0];
-      expect(attributes).to.include({
-        'emb.session_part_end_reason': 'user_session_ended',
-        'emb.is_final_session_part': 1,
-      });
+      expect(attributes).to.have.property(
+        'emb.session_part_end_reason',
+        'user_session_ended',
+      );
+      expect(attributes).to.not.have.property('emb.is_final_session_part');
       expect(attributes).to.not.have.property(
         'emb.user_session_termination_reason',
       );
@@ -1566,32 +1662,144 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     });
 
-    it("doesn't mark the part final when this tab isn't focused", () => {
-      let focused = true;
-      setUpTabs(
-        {
-          visibilityDoc: {
-            visibilityState: 'visible',
-            hasFocus: () => focused,
-          },
-        },
-        {},
-      );
+    it("doesn't mark the part final when another tab's part had the latest activity", () => {
+      setUpTabs();
       thisTab.startSessionPartInternal({ reason: 'init' });
-      focused = false;
+      const partId = thisTab.getSessionPartId();
+      otherTab.startSessionPartInternal({ reason: 'init' });
 
       otherTab.endUserSession();
       deliverOtherTabWrites();
 
-      const { attributes } = memoryExporter.getFinishedSpans()[0];
-      expect(attributes).to.have.property(
+      const thisTabPart = memoryExporter
+        .getFinishedSpans()
+        .find((span) => span.attributes['emb.session_part_id'] === partId);
+      expect(thisTabPart?.attributes).to.have.property(
         'emb.session_part_end_reason',
         'user_session_ended',
       );
-      expect(attributes).to.not.have.property('emb.is_final_session_part');
-      expect(attributes).to.not.have.property(
+      expect(thisTabPart?.attributes).to.not.have.property(
+        'emb.is_final_session_part',
+      );
+      expect(thisTabPart?.attributes).to.not.have.property(
         'emb.user_session_termination_reason',
       );
+    });
+
+    it("keeps this tab's part final when the tab that ended the user session started the next part first", () => {
+      setUpTabs();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const partId = thisTab.getSessionPartId();
+
+      otherTab.endUserSession();
+      deliverOtherTabWrites();
+
+      expect(
+        memoryExporter
+          .getFinishedSpans()
+          .find((span) => span.attributes['emb.session_part_id'] === partId)
+          ?.attributes,
+      ).to.include({
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'manual',
+      });
+    });
+
+    it("claims the final candidate the other tab's part released, so the other tab's max-duration end marks this part final", () => {
+      setUpTabs({ dynamicConfigManager: ONE_HOUR_USER_SESSION });
+      // Starting after the user session does keeps this part's foreground
+      // inactivity timer from firing before the max end.
+      clock.tick(1000);
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const partId = thisTab.getSessionPartId();
+      clock.tick(1000);
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(1000);
+      otherTab.endSessionPartInternal({ reason: 'background' });
+      deliverOtherTabWrites();
+      // This tab's own timer is late, so the other tab, with no part open,
+      // ends the user session.
+      thisTab._clearMaxDurationTimer();
+
+      clock.tick(3597 * 1000);
+      deliverOtherTabWrites();
+
+      const finalParts = memoryExporter
+        .getFinishedSpans()
+        .filter((span) => span.attributes['emb.is_final_session_part'] === 1);
+      expect(finalParts).to.have.lengthOf(1);
+      expect(finalParts[0].attributes).to.include({
+        'emb.session_part_id': partId,
+        'emb.user_session_termination_reason': 'max_duration_reached',
+      });
+    });
+
+    it('claims back the final candidate a stale write from the other tab released', () => {
+      setUpTabs();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(1000);
+      thisTab.startSessionPartInternal({ reason: 'foreground' });
+      const partId = thisTab.getSessionPartId();
+      otherTab.endSessionPartInternal({ reason: 'background' });
+      // The other tab's part end read its own part as the final candidate,
+      // missing this tab's part start, and released it.
+      otherTabStorage.setItem(
+        `${NAMESPACE}__embrace_last_activity`,
+        JSON.stringify({
+          ts: perf.getNow(),
+          sessionPartId: null,
+          sessionPartActivityTs: null,
+        }),
+      );
+      deliverOtherTabWrites();
+
+      otherTab.endUserSession();
+      deliverOtherTabWrites();
+
+      expect(
+        memoryExporter
+          .getFinishedSpans()
+          .find((span) => span.attributes['emb.session_part_id'] === partId)
+          ?.attributes,
+      ).to.include({
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'manual',
+      });
+    });
+
+    it("keeps the user session while another tab is active, past the deadline this tab's part end wrote", () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const userSessionId = thisTab.getUserSessionId();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(60 * 1000);
+      otherTab.endSessionPartInternal({ reason: 'background' });
+
+      // Input in this tab, then the other tab comes back after the deadline
+      // its part end wrote.
+      clock.tick(1440 * 1000);
+      thisTabTarget.dispatchEvent(new Event('keydown'));
+      clock.tick(500 * 1000);
+      otherTab.startSessionPartInternal({ reason: 'foreground' });
+
+      expect(otherTab.getUserSessionId()).to.equal(userSessionId);
+    });
+
+    it('records activity on a focus event while a part is open', () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const partId = thisTab.getSessionPartId();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(1000);
+
+      thisTabTarget.dispatchEvent(new Event('focus'));
+
+      expect(
+        JSON.parse(
+          localStorage.getItem(`${NAMESPACE}__embrace_last_activity`) as string,
+        ),
+      ).to.include({ sessionPartId: partId });
     });
   });
 
@@ -2155,20 +2363,17 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       // Max-duration ended the old part and the user session, but the
       // rollover startSessionPartInternal skipped because the tab is hidden.
-      // The tab isn't focused, so its part isn't the final one.
       void expect(localManager.getSessionPartSpan()).to.be.null;
       void expect(localManager.getSessionPartId()).to.be.null;
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
-        'emb.session_part_end_reason',
-        'user_session_ended',
-      );
-      expect(finishedSpans[0].attributes).to.not.have.property(
         'emb.is_final_session_part',
+        1,
       );
-      expect(finishedSpans[0].attributes).to.not.have.property(
+      expect(finishedSpans[0].attributes).to.have.property(
         'emb.user_session_termination_reason',
+        'max_duration_reached',
       );
 
       // Tab becomes engaged again. The manager's _onEngagementChange would

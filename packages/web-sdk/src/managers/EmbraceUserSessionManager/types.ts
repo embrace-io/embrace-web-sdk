@@ -42,6 +42,16 @@ export interface UserSessionState {
    */
   readonly endReason?: UserSessionEndReason;
   /**
+   * The session part with the latest activity when the user session ended, set
+   * on its ended marker. That part is the final one, whenever it ends.
+   */
+  readonly finalSessionPartId?: string | null;
+  /**
+   * The previous user session's `finalSessionPartId`, copied when this one was
+   * created from it, for that user session's parts that end afterward.
+   */
+  readonly previousFinalSessionPartId?: string | null;
+  /**
    * Null on the first user session since the first visit or after a
    * permanent storage clear.
    */
@@ -56,7 +66,8 @@ export interface UserSessionState {
    */
   readonly userSessionMaxDurationSeconds: number;
   /**
-   * Fixed at user session creation. Sets `inactivityDeadlineTs` at part end.
+   * Fixed at user session creation. The user session expires once no tab has
+   * had activity for this long.
    */
   readonly userSessionInactivityTimeoutSeconds: number;
   /**
@@ -67,7 +78,8 @@ export interface UserSessionState {
   /**
    * Absolute timestamp after which the user session expires
    * (part-end call time + `userSessionInactivityTimeoutSeconds * 1000`). Set on
-   * part end; null while a part is active. Checked at the next part start.
+   * part end; null while a part is active. Only checked when no last activity
+   * is stored, since SDK versions without it expire user sessions from this.
    */
   readonly inactivityDeadlineTs: number | null;
   /**

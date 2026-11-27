@@ -94,8 +94,8 @@ export interface UserSessionManager {
    *
    * Subject to a 5-second cooldown.
    *
-   * Session parts open in other tabs end too, and only the one in the focused
-   * tab is the final part.
+   * Session parts open in other tabs end too, and only the one with the
+   * latest activity is the final part.
    *
    * If no part is active when called, the user session is still ended and
    * the next foreground part begins a new one, but no part span can have

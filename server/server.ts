@@ -130,7 +130,12 @@ const recordSpans = (request: OtlpJson<IExportTraceServiceRequest>) => {
         );
       }
       if (sessionPartId) {
-        receivedSpans[userSessionId][sessionPartId] = { endReason };
+        receivedSpans[userSessionId][sessionPartId] = {
+          endReason,
+          terminationReason: stringAttribute(
+            'emb.user_session_termination_reason',
+          ),
+        };
       }
       logReceivedSessionPartSpan(resourceSpans, sessionPartSpan, userSessionId);
     }

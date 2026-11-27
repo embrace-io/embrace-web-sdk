@@ -1,5 +1,7 @@
 type SessionPartInfo = {
   endReason?: string;
+  /** Only the final session part carries one. */
+  terminationReason?: string;
 };
 
 type ReceivedSpans = Record<string, Record<string, SessionPartInfo>>;

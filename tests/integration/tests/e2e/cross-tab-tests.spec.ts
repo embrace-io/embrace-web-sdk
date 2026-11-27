@@ -6,6 +6,7 @@ import type { ReceivedSpans } from '../../types.ts';
 // `storage` event in the other, as between two tabs.
 const APP_URL = 'http://localhost:3001/platforms/vite-7/es2015/index.html';
 const STATE_KEY = '11111__embrace_user_session_state';
+const LAST_ACTIVITY_KEY = '11111__embrace_last_activity';
 
 const openTab = async (context: BrowserContext) => {
   const page = await context.newPage();
@@ -49,15 +50,32 @@ const storedUserSession = async (page: Page) => {
     : (JSON.parse(raw) as { userSessionId: string; ended?: boolean });
 };
 
-const receivedEndReason = async (
+const finalCandidate = async (page: Page) => {
+  const raw = await page.evaluate(
+    (key) => localStorage.getItem(key),
+    LAST_ACTIVITY_KEY,
+  );
+
+  return raw === null
+    ? null
+    : (JSON.parse(raw) as { sessionPartId: string | null }).sessionPartId;
+};
+
+const receivedPart = async (
   receivedUserSessionId: string,
   receivedSessionPartId: string,
 ) => {
   const response = await fetch('http://localhost:3001/received-spans');
   const received = (await response.json()) as ReceivedSpans;
 
-  return received[receivedUserSessionId]?.[receivedSessionPartId]?.endReason;
+  return received[receivedUserSessionId]?.[receivedSessionPartId];
 };
+
+const receivedEndReason = async (
+  receivedUserSessionId: string,
+  receivedSessionPartId: string,
+) =>
+  (await receivedPart(receivedUserSessionId, receivedSessionPartId))?.endReason;
 
 test.describe('Cross-tab user sessions', () => {
   test('ends the open part when another tab ends the user session, and moves it to the next one', async ({
@@ -138,5 +156,31 @@ test.describe('Cross-tab user sessions', () => {
       .toBe(current?.userSessionId);
     expect((await storedUserSession(thisTab))?.ended).toBeUndefined();
     expect(await sessionPartId(thisTab)).toBe(partId);
+  });
+
+  test('keeps one part final when the tab with the latest activity is hidden and then ends the user session', async ({
+    context,
+  }) => {
+    const thisTab = await openTab(context);
+    const firstUserSessionId = (await userSessionId(thisTab)) as string;
+    const thisTabPartId = (await sessionPartId(thisTab)) as string;
+    // The other tab's part starts last, so it holds the latest activity.
+    const otherTab = await openTab(context);
+    const otherTabPartId = (await sessionPartId(otherTab)) as string;
+
+    // Its part ends and releases the final candidate, which this tab claims.
+    await hideTab(otherTab);
+    await expect.poll(() => finalCandidate(thisTab)).toBe(thisTabPartId);
+    await otherTab.evaluate(() => window.EMBRACE_SDK.session.endUserSession());
+
+    await expect
+      .poll(() => receivedPart(firstUserSessionId, thisTabPartId))
+      .toEqual({
+        endReason: 'user_session_ended',
+        terminationReason: 'manual',
+      });
+    expect(await receivedPart(firstUserSessionId, otherTabPartId)).toEqual({
+      endReason: 'background',
+    });
   });
 });

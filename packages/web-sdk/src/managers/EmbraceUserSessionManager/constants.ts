@@ -11,13 +11,14 @@ export const EMBRACE_SESSION_PART_NUMBER_KEY = 'embrace_session_part_number';
 export const EMBRACE_PERMANENT_PROPERTIES_KEY = 'embrace_permanent_properties';
 export const EMBRACE_LAST_END_USER_SESSION_TS_KEY =
   'embrace_last_end_user_session_ts';
+export const EMBRACE_LAST_ACTIVITY_KEY = 'embrace_last_activity';
 
 export const SESSION_PART_SPAN_NAME = 'emb-session-part';
 
 /**
  * Part end reasons that also end the enclosing user session. Of the session
- * parts that end with it, only the one in the focused tab is stamped as the
- * final one (`emb.is_final_session_part`).
+ * parts that end with it, only the one with the latest activity in any tab is
+ * stamped as the final one (`emb.is_final_session_part`).
  */
 export const USER_SESSION_ENDING_PART_END_REASONS: ReadonlySet<SessionPartEndReason> =
   new Set(['user_session_ended', 'web_foreground_inactivity']);
